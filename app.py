@@ -8,13 +8,7 @@ import math
 st.set_page_config(page_title="Simulateur Hardy-Weinberg", layout="centered")
 
 # --- CSS pour épurer l'interface ---
-st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
+st.markdown("<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}</style>", unsafe_allow_html=True)
 
 st.title("🧬 Simulation de la Reproduction Sexuée")
 
@@ -26,6 +20,7 @@ with st.sidebar:
     st.divider()
     if st.button("♻️ Générer une nouvelle population"):
         st.session_state.pop_init = False
+        st.rerun()
 
 # --- FONCTIONS ET CONSTANTES ---
 COULEUR_A, COULEUR_a = '#F5F5DC', '#8B4513'
@@ -54,55 +49,60 @@ if 'pop_init' not in st.session_state or st.session_state.pop_init == False:
     st.session_state.males = random.choices(['AA', 'Aa', 'aa'], weights=w, k=nb)
     st.session_state.femelles = random.choices(['AA', 'Aa', 'aa'], weights=w, k=nb)
     st.session_state.pop_init = True
+    st.session_state.dernier_tirage = None
 
-# --- ZONE D'AFFICHAGE DYNAMIQUE ---
-# On crée l'espace vide AVANT le bouton
+# --- 1. AFFICHAGE DE LA POPULATION (FIXE) ---
+st.subheader("👥 Population de référence")
+nb_l = math.ceil(len(st.session_state.males)/5)
+fig_pop, ax_pop = plt.subplots(figsize=(10, nb_l * 0.8 + 1))
+ax_pop.set_xlim(-1, 11); ax_pop.set_ylim(0, nb_l + 1)
+ax_pop.axis('off')
+
+style_label(ax_pop, 2, nb_l + 0.5, "MÂLES ♂")
+style_label(ax_pop, 8, nb_l + 0.5, "FEMELLES ♀")
+
+for i in range(len(st.session_state.males)):
+    # Mâles
+    dessiner_individu(ax_pop, i%5, nb_l - (i//5), st.session_state.males[i])
+    # Femelles
+    dessiner_individu(ax_pop, 6+(i%5), nb_l - (i//5), st.session_state.femelles[i])
+
+st.pyplot(fig_pop)
+
+st.divider()
+
+# --- 2. ZONE DE CROISEMENT (DYNAMIQUE) ---
+st.subheader("🐣 Nouveau Croisement")
 placeholder = st.empty()
 
-# On affiche un message d'attente au début si rien n'est tiré
-with placeholder.container():
-    st.info("Cliquez sur le bouton ci-dessous pour simuler un croisement aléatoire.")
-
-# --- BOUTON DE TIRAGE ---
 if st.button("👶 Tirer un couple et créer un descendant", type="primary"):
-    # 1. On efface immédiatement l'ancien contenu
-    placeholder.empty()
-    
-    # 2. On lance le nouveau tirage
     m, f = st.session_state.males, st.session_state.femelles
     im, ifem = random.randint(0, len(m)-1), random.randint(0, len(f)-1)
     père, mère = m[im], f[ifem]
     a1, a2 = random.choice(list(père)), random.choice(list(mère))
     enfant = "".join(sorted(a1 + a2))
 
-    # 3. On prépare le nouveau dessin
-    nb_l = math.ceil(len(m)/5)
-    fig, ax = plt.subplots(figsize=(10, 6 + nb_l*0.5))
-    ax.set_xlim(-1, 11); ax.set_ylim(-2.5, 4 + nb_l)
-    ax.axis('off')
-
-    # Titres et Population
-    style_label(ax, 2, 3.5+nb_l, "MÂLES ♂")
-    style_label(ax, 8, 3.5+nb_l, "FEMELLES ♀")
-    for i in range(len(m)):
-        dessiner_individu(ax, i%5, 3+(nb_l-(i//5)), m[i], surlignage=(i==im))
-        dessiner_individu(ax, 6+(i%5), 3+(nb_l-(i//5)), f[i], surlignage=(i==ifem))
+    # On dessine uniquement le croisement
+    fig_cr, ax_cr = plt.subplots(figsize=(10, 4))
+    ax_cr.set_xlim(-1, 11); ax_cr.set_ylim(-2, 3)
+    ax_cr.axis('off')
 
     # Parents
-    style_label(ax, 2.5, 1.8, "PÈRE", couleur='blue')
-    dessiner_individu(ax, 2.5, 1, père, surlignage=True)
-    style_label(ax, 7.5, 1.8, "MÈRE", couleur='magenta')
-    dessiner_individu(ax, 7.5, 1, mère, surlignage=True)
+    style_label(ax_cr, 2.5, 2.5, "PÈRE CHOISI", couleur='blue')
+    dessiner_individu(ax_cr, 2.5, 1.5, père, surlignage=True)
+    style_label(ax_cr, 7.5, 2.5, "MÈRE CHOISIE", couleur='magenta')
+    dessiner_individu(ax_cr, 7.5, 1.5, mère, surlignage=True)
     
-    # Gamètes (Méiose)
+    # Gamètes
     for x_p, al in [(2.5, a1), (7.5, a2)]:
         c = COULEUR_A if al == 'A' else COULEUR_a
-        ax.add_patch(patches.Circle((x_p, 0.1), 0.2, fc=c, ec='black', zorder=3))
-        ax.text(x_p, 0.1, al, ha='center', va='center', fontweight='bold', color=('black' if al=='A' else 'white'), zorder=4)
+        ax_cr.add_patch(patches.Circle((x_p, 0.5), 0.25, fc=c, ec='black', zorder=3))
+        ax_cr.text(x_p, 0.5, al, ha='center', va='center', fontweight='bold', color=('black' if al=='A' else 'white'), zorder=4)
 
-    # Descendant final
-    style_label(ax, 5, -1.5, f"DESCENDANT : {enfant}")
-    dessiner_individu(ax, 5, -0.8, enfant)
+    # Descendant
+    style_label(ax_cr, 5, -1.5, f"DESCENDANT OBTENU : {enfant}")
+    dessiner_individu(ax_cr, 5, -0.5, enfant)
     
-    # 4. On injecte le nouveau dessin dans l'espace vide
-    placeholder.pyplot(fig)
+    placeholder.pyplot(fig_cr)
+else:
+    placeholder.info("En attente d'un tirage au sort...")
