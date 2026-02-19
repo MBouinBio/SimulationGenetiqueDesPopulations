@@ -7,7 +7,7 @@ import math
 # Configuration de la page
 st.set_page_config(page_title="Simulateur Hardy-Weinberg", layout="centered")
 
-# --- CSS pour cacher le menu Streamlit et épurer l'interface ---
+# --- CSS pour épurer l'interface ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -17,7 +17,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🧬 Simulation de la Reproduction Sexuée")
-st.write("Choisissez les paramètres dans la barre à gauche et observez la transmission des allèles.")
 
 # --- BARRE LATÉRALE ---
 with st.sidebar:
@@ -28,7 +27,7 @@ with st.sidebar:
     if st.button("♻️ Générer une nouvelle population"):
         st.session_state.pop_init = False
 
-# --- CONSTANTES VISUELLES ---
+# --- FONCTIONS ET CONSTANTES ---
 COULEUR_A, COULEUR_a = '#F5F5DC', '#8B4513'
 COULEURS_INDIV = {'AA': '#FF595E', 'Aa': '#8AC926', 'aa': '#1982C4'}
 
@@ -48,7 +47,7 @@ def style_label(ax, x, y, texte, couleur='black'):
     ax.text(x, y, texte, ha='center', va='center', fontsize=10, fontweight='bold', 
             color=couleur, bbox=dict(facecolor='white', edgecolor='#CCCCCC', boxstyle='round,pad=0.3', alpha=0.9), zorder=5)
 
-# --- INITIALISATION ---
+# --- INITIALISATION DE LA POPULATION ---
 if 'pop_init' not in st.session_state or st.session_state.pop_init == False:
     nb = taille_pop // 2
     w = [p_freq**2, 2*p_freq*(1-p_freq), (1-p_freq)**2]
@@ -56,42 +55,54 @@ if 'pop_init' not in st.session_state or st.session_state.pop_init == False:
     st.session_state.femelles = random.choices(['AA', 'Aa', 'aa'], weights=w, k=nb)
     st.session_state.pop_init = True
 
-# --- BOUTON D'ACTION ---
+# --- ZONE D'AFFICHAGE DYNAMIQUE ---
+# On crée l'espace vide AVANT le bouton
+placeholder = st.empty()
+
+# On affiche un message d'attente au début si rien n'est tiré
+with placeholder.container():
+    st.info("Cliquez sur le bouton ci-dessous pour simuler un croisement aléatoire.")
+
+# --- BOUTON DE TIRAGE ---
 if st.button("👶 Tirer un couple et créer un descendant", type="primary"):
+    # 1. On efface immédiatement l'ancien contenu
+    placeholder.empty()
+    
+    # 2. On lance le nouveau tirage
     m, f = st.session_state.males, st.session_state.femelles
     im, ifem = random.randint(0, len(m)-1), random.randint(0, len(f)-1)
     père, mère = m[im], f[ifem]
     a1, a2 = random.choice(list(père)), random.choice(list(mère))
     enfant = "".join(sorted(a1 + a2))
 
-    # Dessin
+    # 3. On prépare le nouveau dessin
     nb_l = math.ceil(len(m)/5)
     fig, ax = plt.subplots(figsize=(10, 6 + nb_l*0.5))
     ax.set_xlim(-1, 11); ax.set_ylim(-2.5, 4 + nb_l)
     ax.axis('off')
 
-    # Population
+    # Titres et Population
     style_label(ax, 2, 3.5+nb_l, "MÂLES ♂")
     style_label(ax, 8, 3.5+nb_l, "FEMELLES ♀")
     for i in range(len(m)):
         dessiner_individu(ax, i%5, 3+(nb_l-(i//5)), m[i], surlignage=(i==im))
         dessiner_individu(ax, 6+(i%5), 3+(nb_l-(i//5)), f[i], surlignage=(i==ifem))
 
-    # Parents et Enfant
+    # Parents
     style_label(ax, 2.5, 1.8, "PÈRE", couleur='blue')
     dessiner_individu(ax, 2.5, 1, père, surlignage=True)
     style_label(ax, 7.5, 1.8, "MÈRE", couleur='magenta')
     dessiner_individu(ax, 7.5, 1, mère, surlignage=True)
     
-    # Gamètes
+    # Gamètes (Méiose)
     for x_p, al in [(2.5, a1), (7.5, a2)]:
         c = COULEUR_A if al == 'A' else COULEUR_a
         ax.add_patch(patches.Circle((x_p, 0.1), 0.2, fc=c, ec='black', zorder=3))
         ax.text(x_p, 0.1, al, ha='center', va='center', fontweight='bold', color=('black' if al=='A' else 'white'), zorder=4)
 
+    # Descendant final
     style_label(ax, 5, -1.5, f"DESCENDANT : {enfant}")
     dessiner_individu(ax, 5, -0.8, enfant)
     
-    st.pyplot(fig)
-else:
-    st.info("Cliquez sur le bouton pour simuler un croisement aléatoire.")
+    # 4. On injecte le nouveau dessin dans l'espace vide
+    placeholder.pyplot(fig)
