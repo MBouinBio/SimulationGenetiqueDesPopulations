@@ -14,7 +14,7 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
-    """, unsafe_allow_status_code=True)
+    """, unsafe_allow_html=True)
 
 st.title("🧬 Simulation de la Reproduction Sexuée")
 st.write("Choisissez les paramètres dans la barre à gauche et observez la transmission des allèles.")
