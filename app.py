@@ -3,106 +3,129 @@ import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import math
+import time
 
-# Configuration de la page
-st.set_page_config(page_title="Simulateur Hardy-Weinberg", layout="centered")
+st.set_page_config(page_title="Simulateur SVT", layout="centered")
 
-# --- CSS pour épurer l'interface ---
+# --- STYLE ---
 st.markdown("<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}</style>", unsafe_allow_html=True)
 
-st.title("🧬 Simulation de la Reproduction Sexuée")
+# --- CONSTANTES ---
+BEIGE = '#F5F5DC'
+MARRON = '#5D3A1A'
+COULEURS_INDIV = {'AA': '#F5F5DC', 'Aa': '#D2B48C', 'aa': '#5D3A1A'}
 
-# --- BARRE LATÉRALE ---
-with st.sidebar:
-    st.header("⚙️ Paramètres")
-    p_freq = st.slider("Fréquence de l'allèle A (beige)", 0.0, 1.0, 0.5, 0.05)
-    taille_pop = st.number_input("Taille totale de la population", 4, 100, 20, 2)
-    st.divider()
-    if st.button("♻️ Générer une nouvelle population"):
-        st.session_state.pop_init = False
-        st.rerun()
+# --- INITIALISATION ---
+if 'pop_init' not in st.session_state:
+    # 10 Aa, 5 aa, 5 AA = 20 individus
+    base = ['Aa']*10 + ['aa']*5 + ['AA']*5
+    st.session_state.males = list(base)
+    random.shuffle(st.session_state.males)
+    st.session_state.femelles = list(base)
+    random.shuffle(st.session_state.femelles)
+    st.session_state.id_pere = None
+    st.session_state.id_mere = None
+    st.session_state.enfant = None
+    st.session_state.alleles_choisis = None
+    st.session_state.pop_init = True
 
-# --- FONCTIONS ET CONSTANTES ---
-COULEUR_A, COULEUR_a = '#F5F5DC', '#8B4513'
-COULEURS_INDIV = {'AA': '#FF595E', 'Aa': '#8AC926', 'aa': '#1982C4'}
+# --- FONCTIONS DE DESSIN ---
+def style_label(ax, x, y, texte, couleur='black'):
+    ax.text(x, y, texte, ha='center', va='center', fontsize=9, fontweight='bold', 
+            color=couleur, bbox=dict(facecolor='white', edgecolor='#CCCCCC', boxstyle='round,pad=0.3', alpha=0.9))
 
-def dessiner_individu(ax, x, y, ge, surlignage=None):
+def dessiner_indiv(ax, x, y, ge, souligne=False, halo_allele=None):
     r = 0.35
-    edge = 'gold' if surlignage else 'black'
-    lw = 4 if surlignage else 1
-    ax.add_patch(patches.Ellipse((x, y), r*2.2, r*1.5, fc=COULEURS_INDIV[ge], ec=edge, lw=lw, zorder=2))
+    ec = 'gold' if souligne else 'black'
+    lw = 4 if souligne else 1
+    # Corps
+    ax.add_patch(patches.Ellipse((x, y), r*2.2, r*1.5, fc=COULEURS_INDIV[ge], ec=ec, lw=lw, zorder=2))
+    # Allèles
     for i, a in enumerate(list(ge)):
         dx = -0.3 * r if i == 0 else 0.3 * r
-        c = COULEUR_A if a == 'A' else COULEUR_a
-        ax.add_patch(patches.Ellipse((x + dx, y), r*0.5, r*0.8, fc=c, ec='black', lw=0.5, zorder=3))
-        col_t = 'black' if a == 'A' else 'white'
-        ax.text(x+dx, y, a, ha='center', va='center', fontsize=7, fontweight='bold', color=col_t, zorder=4)
+        c = BEIGE if a == 'A' else MARRON
+        # Surbrillance de l'allèle spécifique si tiré
+        ec_a = 'gold' if (halo_allele is not None and i == halo_allele) else 'black'
+        lw_a = 3 if (halo_allele is not None and i == halo_allele) else 0.5
+        ax.add_patch(patches.Ellipse((x + dx, y), r*0.5, r*0.8, fc=c, ec=ec_a, lw=lw_a, zorder=3))
+        txt_c = 'black' if a == 'A' else 'white'
+        ax.text(x+dx, y, a, ha='center', va='center', fontsize=7, fontweight='bold', color=txt_c, zorder=4)
 
-def style_label(ax, x, y, texte, couleur='black'):
-    ax.text(x, y, texte, ha='center', va='center', fontsize=10, fontweight='bold', 
-            color=couleur, bbox=dict(facecolor='white', edgecolor='#CCCCCC', boxstyle='round,pad=0.3', alpha=0.9), zorder=5)
+# --- INTERFACE ---
+st.title("🧬 Étude de la transmission des allèles")
 
-# --- INITIALISATION DE LA POPULATION ---
-if 'pop_init' not in st.session_state or st.session_state.pop_init == False:
-    nb = taille_pop // 2
-    w = [p_freq**2, 2*p_freq*(1-p_freq), (1-p_freq)**2]
-    st.session_state.males = random.choices(['AA', 'Aa', 'aa'], weights=w, k=nb)
-    st.session_state.femelles = random.choices(['AA', 'Aa', 'aa'], weights=w, k=nb)
-    st.session_state.pop_init = True
-    st.session_state.dernier_tirage = None
+# Affichage des Populations
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.set_xlim(-1, 11); ax.set_ylim(-1, 6); ax.axis('off')
 
-# --- 1. AFFICHAGE DE LA POPULATION (FIXE) ---
-st.subheader("👥 Population de référence")
-nb_l = math.ceil(len(st.session_state.males)/5)
-fig_pop, ax_pop = plt.subplots(figsize=(10, nb_l * 0.8 + 1))
-ax_pop.set_xlim(-1, 11); ax_pop.set_ylim(0, nb_l + 1)
-ax_pop.axis('off')
+style_label(ax, 5, 5.5, "POPULATION")
+style_label(ax, 2, 4.8, "Hommes")
+style_label(ax, 8, 4.8, "Femmes")
 
-style_label(ax_pop, 2, nb_l + 0.5, "MÂLES ♂")
-style_label(ax_pop, 8, nb_l + 0.5, "FEMELLES ♀")
+for i in range(20):
+    # Hommes à gauche
+    dessiner_indiv(ax, i%4, 4-(i//4)*0.8, st.session_state.males[i], souligne=(st.session_state.id_pere == i))
+    # Femmes à droite
+    dessiner_indiv(ax, 7+i%4, 4-(i//4)*0.8, st.session_state.femelles[i], souligne=(st.session_state.id_mere == i))
 
-for i in range(len(st.session_state.males)):
-    # Mâles
-    dessiner_individu(ax_pop, i%5, nb_l - (i//5), st.session_state.males[i])
-    # Femelles
-    dessiner_individu(ax_pop, 6+(i%5), nb_l - (i//5), st.session_state.femelles[i])
+st.pyplot(fig)
 
-st.pyplot(fig_pop)
+# --- BOUTONS ---
+col1, col2 = st.columns(2)
 
-st.divider()
+with col1:
+    if st.button("👨 Tirer le père au hasard"):
+        st.session_state.id_pere = random.randint(0, 19)
+        st.session_state.enfant = None # Reset enfant si nouveau parent
+        st.rerun()
 
-# --- 2. ZONE DE CROISEMENT (DYNAMIQUE) ---
-st.subheader("🐣 Nouveau Croisement")
-placeholder = st.empty()
+with col2:
+    if st.button("👩 Tirer la mère au hasard"):
+        st.session_state.id_mere = random.randint(0, 19)
+        st.session_state.enfant = None
+        st.rerun()
 
-if st.button("👶 Tirer un couple et créer un descendant", type="primary"):
-    m, f = st.session_state.males, st.session_state.femelles
-    im, ifem = random.randint(0, len(m)-1), random.randint(0, len(f)-1)
-    père, mère = m[im], f[ifem]
-    a1, a2 = random.choice(list(père)), random.choice(list(mère))
-    enfant = "".join(sorted(a1 + a2))
-
-    # On dessine uniquement le croisement
-    fig_cr, ax_cr = plt.subplots(figsize=(10, 4))
-    ax_cr.set_xlim(-1, 11); ax_cr.set_ylim(-2, 3)
-    ax_cr.axis('off')
-
-    # Parents
-    style_label(ax_cr, 2.5, 2.5, "PÈRE CHOISI", couleur='blue')
-    dessiner_individu(ax_cr, 2.5, 1.5, père, surlignage=True)
-    style_label(ax_cr, 7.5, 2.5, "MÈRE CHOISIE", couleur='magenta')
-    dessiner_individu(ax_cr, 7.5, 1.5, mère, surlignage=True)
+# --- AFFICHAGE PARENTS TIRÉS ---
+if st.session_state.id_pere is not None or st.session_state.id_mere is not None:
+    fig2, ax2 = plt.subplots(figsize=(10, 3))
+    ax2.set_xlim(-1, 11); ax2.set_ylim(0, 3); ax2.axis('off')
     
-    # Gamètes
-    for x_p, al in [(2.5, a1), (7.5, a2)]:
-        c = COULEUR_A if al == 'A' else COULEUR_a
-        ax_cr.add_patch(patches.Circle((x_p, 0.5), 0.25, fc=c, ec='black', zorder=3))
-        ax_cr.text(x_p, 0.5, al, ha='center', va='center', fontweight='bold', color=('black' if al=='A' else 'white'), zorder=4)
-
-    # Descendant
-    style_label(ax_cr, 5, -1.5, f"DESCENDANT OBTENU : {enfant}")
-    dessiner_individu(ax_cr, 5, -0.5, enfant)
+    if st.session_state.id_pere is not None:
+        style_label(ax2, 2.5, 2.5, "père tiré au hasard")
+        dessiner_indiv(ax2, 2.5, 1.2, st.session_state.males[st.session_state.id_pere], 
+                       souligne=True, halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
+        
+    if st.session_state.id_mere is not None:
+        style_label(ax2, 7.5, 2.5, "mère tirée au hasard")
+        dessiner_indiv(ax2, 7.5, 1.2, st.session_state.femelles[st.session_state.id_mere], 
+                       souligne=True, halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
     
-    placeholder.pyplot(fig_cr)
-else:
-    placeholder.info("En attente d'un tirage au sort...")
+    st.pyplot(fig2)
+
+# --- ÉTAPE ENFANT ---
+if st.session_state.id_pere is not None and st.session_state.id_mere is not None:
+    if st.button("🎲 Tirer les allèles au hasard"):
+        with st.spinner('Méiose et fécondation...'):
+            time.sleep(0.5)
+            # On tire l'index de l'allèle (0 ou 1) chez chaque parent
+            idx_p, idx_m = random.randint(0, 1), random.randint(0, 1)
+            p_ge = st.session_state.males[st.session_state.id_pere]
+            m_ge = st.session_state.femelles[st.session_state.id_mere]
+            
+            st.session_state.alleles_choisis = (idx_p, idx_m)
+            st.session_state.enfant = "".join(sorted(p_ge[idx_p] + m_ge[idx_m]))
+            st.rerun()
+
+if st.session_state.enfant:
+    fig3, ax3 = plt.subplots(figsize=(10, 2))
+    ax3.set_xlim(-1, 11); ax3.set_ylim(0, 2); ax3.axis('off')
+    style_label(ax3, 5, 1.5, "enfant")
+    dessiner_indiv(ax3, 5, 0.5, st.session_state.enfant)
+    st.pyplot(fig3)
+    
+    if st.button("🔄 Recommencer"):
+        st.session_state.id_pere = None
+        st.session_state.id_mere = None
+        st.session_state.enfant = None
+        st.session_state.alleles_choisis = None
+        st.rerun()
