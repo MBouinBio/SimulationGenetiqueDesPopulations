@@ -64,7 +64,7 @@ with col_btns:
         st.session_state.id_mere = random.randint(0, 19)
         st.rerun()
     dis_e = (st.session_state.id_pere is None or st.session_state.id_mere is None or st.session_state.enfant is not None)
-    if st.button("🎲 Enfant", disabled=dis_e):
+    if st.button("👶 Enfant", disabled=dis_e):
         st.session_state.alleles_choisis = (random.randint(0, 1), random.randint(0, 1))
         p = st.session_state.males[st.session_state.id_pere][st.session_state.alleles_choisis[0]]
         m = st.session_state.femelles[st.session_state.id_mere][st.session_state.alleles_choisis[1]]
