@@ -19,7 +19,7 @@ st.markdown("""
 # --- COULEURS ---
 C_AA = '#FFFFFF' # Blanc
 C_aa = '#FFCCCC' # Blanc
-C_Aa = '#FFFFFF' # Rouge très clair
+C_Aa = '#DBDBDB' # Gris
 COULEURS_INDIV = {'AA': C_AA, 'aa': C_aa, 'Aa': C_Aa}
 COULEUR_A = '#F5F0F0'
 COULEUR_a = '#BEA19D'
