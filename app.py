@@ -30,7 +30,7 @@ st.markdown("""
 # --- CONSTANTES ---
 BEIGE = '#F5F5DC'
 MARRON = '#5D3A1A'
-COULEURS_INDIV = {'AA': '#F5F5DC', 'Aa': '#D2B48C', 'aa': '#5D3A1A'}
+COULEURS_INDIV = {'AA': '#F5F5DC', 'Aa': '#D2B48C', 'aa': '#ad00004e'}
 
 # --- INITIALISATION DE LA SESSION ---
 if 'pop_init' not in st.session_state:
