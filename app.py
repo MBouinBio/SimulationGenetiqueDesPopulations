@@ -10,18 +10,15 @@ st.set_page_config(page_title="Simulateur SVT", layout="centered")
 # --- Configuration ultra-compacte ---
 st.markdown("""
     <style>
-    /* Supprimer l'espace vide tout en haut de la page */
-    .block-container {
-        padding-top: 1rem;
-        padding-bottom: 0rem;
-    }
-    /* Réduire la taille du titre principal */
-    h1 {
-        font-size: 1.5rem !important;
-        margin-bottom: 0.5rem;
-        padding-bottom: 0rem;
-    }
-    /* Cacher les menus inutiles */
+    /* Réduction drastique des espaces entre les blocs */
+    .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    .stPlotlyChart { margin-bottom: -2rem; }
+    div[data-testid="stVerticalBlock"] > div { padding-top: 0rem; padding-bottom: 0rem; }
+    
+    /* Titre plus petit */
+    h1 { font-size: 1.4rem !important; margin-bottom: 0rem; }
+    h3 { font-size: 1.1rem !important; margin-top: 0rem; margin-bottom: 0.5rem; }
+    
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
