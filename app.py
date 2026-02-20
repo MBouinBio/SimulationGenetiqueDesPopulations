@@ -83,7 +83,7 @@ for i in range(20):
     dessiner_indiv(ax, i%4, 4-(i//4)*0.8, st.session_state.males[i], souligne=(st.session_state.id_pere == i))
     # Femmes à droite
     dessiner_indiv(ax, 7+i%4, 4-(i//4)*0.8, st.session_state.femelles[i], souligne=(st.session_state.id_mere == i))
-
+plt.tight_layout()
 st.pyplot(fig)
 
 # --- BOUTONS ---
@@ -115,7 +115,7 @@ if st.session_state.id_pere is not None or st.session_state.id_mere is not None:
         style_label(ax2, 7.5, 2.5, "mère tirée au hasard")
         dessiner_indiv(ax2, 7.5, 1.2, st.session_state.femelles[st.session_state.id_mere], 
                        souligne=True, halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
-    
+    plt.tight_layout()
     st.pyplot(fig2)
 
 # --- ÉTAPE ENFANT ---
@@ -137,6 +137,7 @@ if st.session_state.enfant:
     ax3.set_xlim(-1, 11); ax3.set_ylim(0, 2); ax3.axis('off')
     style_label(ax3, 5, 1.5, "enfant")
     dessiner_indiv(ax3, 5, 0.5, st.session_state.enfant)
+    plt.tight_layout()
     st.pyplot(fig3)
     
     if st.button("🔄 Recommencer"):
