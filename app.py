@@ -5,7 +5,7 @@ import matplotlib.patches as patches
 import pandas as pd
 
 # --- CONFIGURATION ---
-st.set_page_config(page_title="Simulateur Génétique SVT", layout="wide")
+st.set_page_config(page_title="Simulateur Génétique biologie", layout="wide")
 
 # --- CSS : TITRE ET COMPACTAGE ---
 st.markdown("""
@@ -51,7 +51,7 @@ def dessiner_label(ax, x, y, texte, align='center', color='white'):
             bbox=dict(facecolor=color, edgecolor='#CCCCCC', boxstyle='round,pad=0.1', alpha=0.8), zorder=10)
 
 # --- INTERFACE ---
-st.title("🧬 Simulation d'une descendance (Méiose et Fécondation)")
+st.title("🧬 Simulation d'une descendance")
 col_graph, col_btns = st.columns([4, 1])
 
 with col_btns:
