@@ -7,7 +7,7 @@ import pandas as pd
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Simulateur Génétique SVT", layout="wide")
 
-# --- CSS : TITRE PLUS PETIT ET COMPACTAGE ---
+# --- CSS : TITRE ET COMPACTAGE ---
 st.markdown("""
     <style>
     .block-container { padding-top: 0.5rem; padding-bottom: 0rem; }
@@ -75,42 +75,43 @@ with col_btns:
         st.rerun()
 
 with col_graph:
-    # Réduction de la hauteur de la figure (7 -> 5.5) pour compacter verticalement
-    fig, ax = plt.subplots(figsize=(9, 5.5), dpi=100)
-    # Fenêtre Y resserrée (-1.5 à 5.0 au lieu de -2.5 à 5.5)
-    ax.set_xlim(-1, 11); ax.set_ylim(-1.5, 5.0); ax.axis('off')
+    # Figure compactée
+    fig, ax = plt.subplots(figsize=(9, 4.5), dpi=100)
+    # On réduit encore le plafond (Ymax=4.5) et le plancher (Ymin=-1.2)
+    ax.set_xlim(-1, 11); ax.set_ylim(-1.2, 4.5); ax.axis('off')
 
-    # 1. Population (Rapprochée du haut)
-    dessiner_label(ax, 5, 4.8, "Population") # Label descendu de 5.2 à 4.8
+    # 1. Population (Encore plus proche du haut)
+    dessiner_label(ax, 5, 4.3, "Population") 
     for i in range(20):
-        # Hommes (Y : de 4.4 à 2.45)
-        mx, my = i%5, 4.4-(i//5)*0.65
+        # Ecart vertical réduit de 0.65 à 0.48
+        # Hommes
+        mx, my = i%5, 3.9-(i//5)*0.48
         dessiner_indiv(ax, mx, my, st.session_state.males[i], souligne=(st.session_state.id_pere == i))
         if st.session_state.id_pere == i:
-            ax.annotate("", xy=(2.5, 1.2), xytext=(mx, my-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6))
+            ax.annotate("", xy=(2.5, 1.1), xytext=(mx, my-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6))
         
         # Femmes
-        fx, fy = 6+i%5, 4.4-(i//5)*0.65
+        fx, fy = 6+i%5, 3.9-(i//5)*0.48
         dessiner_indiv(ax, fx, fy, st.session_state.femelles[i], souligne=(st.session_state.id_mere == i))
         if st.session_state.id_mere == i:
-            ax.annotate("", xy=(7.5, 1.2), xytext=(fx, fy-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6))
+            ax.annotate("", xy=(7.5, 1.1), xytext=(fx, fy-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6))
 
-    # 2. Parents (Remontés : Y=1.2 au lieu de 0.5 pour coller à la population)
+    # 2. Parents (Positionnés juste sous la population compactée)
     if st.session_state.id_pere is not None:
-        dessiner_label(ax, 0.8, 1.2, "Père", align='right')
-        dessiner_indiv(ax, 2.5, 1.2, st.session_state.males[st.session_state.id_pere], souligne=True, 
+        dessiner_label(ax, 0.8, 1.1, "Père", align='right')
+        dessiner_indiv(ax, 2.5, 1.1, st.session_state.males[st.session_state.id_pere], souligne=True, 
                        halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
     if st.session_state.id_mere is not None:
-        dessiner_label(ax, 9.2, 1.2, "Mère", align='left')
-        dessiner_indiv(ax, 7.5, 1.2, st.session_state.femelles[st.session_state.id_mere], souligne=True, 
+        dessiner_label(ax, 9.2, 1.1, "Mère", align='left')
+        dessiner_indiv(ax, 7.5, 1.1, st.session_state.femelles[st.session_state.id_mere], souligne=True, 
                        halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
 
-    # 3. Enfant (Remonté : Y=-0.5 au lieu de -1.0 pour coller aux parents)
+    # 3. Enfant (Remonté au maximum)
     if st.session_state.enfant:
-        dessiner_label(ax, 3.8, -0.5, "Enfant", align='right')
-        dessiner_indiv(ax, 5, -0.5, st.session_state.enfant)
-        ax.annotate("", xy=(4.9, -0.3), xytext=(2.5, 0.95), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
-        ax.annotate("", xy=(5.1, -0.3), xytext=(7.5, 0.95), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
+        dessiner_label(ax, 3.8, -0.4, "Enfant", align='right')
+        dessiner_indiv(ax, 5, -0.4, st.session_state.enfant)
+        ax.annotate("", xy=(4.9, -0.2), xytext=(2.5, 0.85), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
+        ax.annotate("", xy=(5.1, -0.2), xytext=(7.5, 0.85), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
 
     plt.tight_layout(pad=0)
     st.pyplot(fig)
