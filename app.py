@@ -80,7 +80,7 @@ with col_btns:
 
 with col_graph:
     # --- GRAPHIQUE COMPACTÉ ---
-    fig, ax = plt.subplots(figsize=(9, 7), dpi=10)
+    fig, ax = plt.subplots(figsize=(9, 7))
     # Réduction des limites Y pour tasser le tout
     ax.set_xlim(-1, 11); ax.set_ylim(-2.5, 5.5); ax.axis('off')
 
