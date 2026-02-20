@@ -4,8 +4,18 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import pandas as pd
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="Simulateur SVT Rapide", layout="wide")
+# --- CONFIGURATION DE LA PAGE ---
+st.set_page_config(page_title="Simulateur Génétique SVT", layout="wide")
+
+# --- CSS POUR COMPACTAGE MAXIMAL ---
+st.markdown("""
+    <style>
+    .block-container { padding-top: 0.5rem; padding-bottom: 0rem; }
+    h1 { font-size: 1.2rem !important; margin-bottom: 0.2rem; text-align: left; }
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+    .stButton>button { width: 100%; height: 3rem; margin-bottom: 0.5rem; font-weight: bold; }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- COULEURS ---
 C_AA, C_aa, C_Aa = '#FFFFFF', '#DBDBDB', '#FFFFFF'
@@ -15,13 +25,15 @@ COULEUR_A, COULEUR_a = '#F5F0F0', '#BEA19D'
 # --- INITIALISATION ---
 if 'males' not in st.session_state:
     base = ['Aa']*10 + ['aa']*5 + ['AA']*5
-    m, f = list(base), list(base)
-    random.shuffle(m); random.shuffle(f)
-    st.session_state.males = m
-    st.session_state.femelles = f
+    st.session_state.males = list(base); random.shuffle(st.session_state.males)
+    st.session_state.femelles = list(base); random.shuffle(st.session_state.femelles)
     st.session_state.id_pere = st.session_state.id_mere = st.session_state.enfant = st.session_state.alleles_choisis = None
 
-# --- FONCTION DE DESSIN ---
+# --- FONCTIONS DE DESSIN ---
+def dessiner_label(ax, x, y, texte, align='center'):
+    ax.text(x, y, texte.upper(), ha=align, va='center', fontsize=7, fontweight='bold',
+            bbox=dict(facecolor='white', edgecolor='#CCCCCC', boxstyle='round,pad=0.2', alpha=0.8), zorder=10)
+
 def dessiner_indiv(ax, x, y, ge, souligne=False, halo_allele=None):
     r = 0.28
     ec = 'gold' if souligne else 'black'
@@ -35,80 +47,85 @@ def dessiner_indiv(ax, x, y, ge, souligne=False, halo_allele=None):
         ax.add_patch(patches.Ellipse((x+dx, y), 0.16, 0.25, fc=c, ec=ec_a, lw=lw_a, zorder=6))
         ax.text(x+dx, y, a, ha='center', va='center', fontsize=6, fontweight='bold', zorder=7)
 
-# --- BLOC 1 : POPULATION (MIS EN CACHE) ---
-@st.cache_data
-def afficher_population(males, femelles, id_pere, id_mere):
-    fig, ax = plt.subplots(figsize=(10, 3), dpi=90)
-    ax.set_xlim(-0.5, 11.5); ax.set_ylim(2.5, 5.5); ax.axis('off')
-    
-    for i in range(20):
-        # Hommes
-        mx, my = i%5, 4.8-(i//5)*0.7
-        dessiner_indiv(ax, mx, my, males[i], souligne=(id_pere == i))
-        # Femmes
-        fx, fy = 6+i%5, 4.8-(i//5)*0.7
-        dessiner_indiv(ax, fx, fy, femelles[i], souligne=(id_mere == i))
-    
-    plt.tight_layout(pad=0)
-    return fig
-
-# --- INTERFACE ---
+# --- MISE EN PAGE ---
 st.title("🧬 Transmission des allèles")
 col_graph, col_btns = st.columns([4, 1])
 
 with col_btns:
     st.write("### Actions")
-    # Verrouillage : Père et Mère désactivés si déjà choisis
-    dis_p = st.session_state.id_pere is not None
-    dis_m = st.session_state.id_mere is not None
     
-    if st.button("👨 Père", disabled=dis_p):
+    # VERROUILLAGE : Les boutons Père et Mère sont désactivés si un choix a déjà été fait
+    # Ils ne redeviennent cliquables qu'après un "Reset"
+    btn_pere_dis = st.session_state.id_pere is not None
+    btn_mere_dis = st.session_state.id_mere is not None
+    
+    if st.button("👨 Père", disabled=btn_pere_dis):
         st.session_state.id_pere = random.randint(0, 19)
         st.rerun()
-    if st.button("👩 Mère", disabled=dis_m):
+        
+    if st.button("👩 Mère", disabled=btn_mere_dis):
         st.session_state.id_mere = random.randint(0, 19)
         st.rerun()
-    
-    dis_e = (st.session_state.id_pere is None or st.session_state.id_mere is None or st.session_state.enfant is not None)
-    if st.button("🎲 Enfant", disabled=dis_e):
+        
+    # Enfant cliquable seulement si les deux parents sont là ET que l'enfant n'est pas déjà né
+    btn_enfant_dis = (st.session_state.id_pere is None or st.session_state.id_mere is None or st.session_state.enfant is not None)
+    if st.button("🎲 Enfant", disabled=btn_enfant_dis):
         st.session_state.alleles_choisis = (random.randint(0, 1), random.randint(0, 1))
         p = st.session_state.males[st.session_state.id_pere][st.session_state.alleles_choisis[0]]
         m = st.session_state.femelles[st.session_state.id_mere][st.session_state.alleles_choisis[1]]
         st.session_state.enfant = "".join(sorted(p + m))
         st.rerun()
-    
+        
     if st.button("🔄 Reset"):
         st.session_state.id_pere = st.session_state.id_mere = st.session_state.enfant = st.session_state.alleles_choisis = None
         st.rerun()
 
 with col_graph:
-    # 1. Le bloc de la population (Utilise le cache)
-    fig_pop = afficher_population(tuple(st.session_state.males), tuple(st.session_state.femelles), st.session_state.id_pere, st.session_state.id_mere)
-    st.pyplot(fig_pop)
+    fig, ax = plt.subplots(figsize=(9, 7), dpi=100)
+    ax.set_xlim(-1, 11); ax.set_ylim(-2.5, 5.5); ax.axis('off')
 
-    # 2. Le bloc des parents choisis (Recalculé car très léger)
-    if st.session_state.id_pere is not None or st.session_state.id_mere is not None:
-        fig_par, ax_par = plt.subplots(figsize=(10, 1.2), dpi=90)
-        ax_par.set_xlim(-0.5, 11.5); ax_par.set_ylim(0.5, 1.5); ax_par.axis('off')
+    dessiner_label(ax, 5, 5.2, "Population")
+    for i in range(20):
+        mx, my = i%5, 4.4-(i//5)*0.65
+        dessiner_indiv(ax, mx, my, st.session_state.males[i], souligne=(st.session_state.id_pere == i))
+        if st.session_state.id_pere == i:
+            ax.annotate("", xy=(2.5, 1.2), xytext=(mx, my-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6, connectionstyle="arc3,rad=-0.1"))
         
-        if st.session_state.id_pere is not None:
-            dessiner_indiv(ax_par, 2.5, 1, st.session_state.males[st.session_state.id_pere], souligne=True, 
-                           halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
-        if st.session_state.id_mere is not None:
-            dessiner_indiv(ax_par, 7.5, 1, st.session_state.femelles[st.session_state.id_mere], souligne=True, 
-                           halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
-        st.pyplot(fig_par)
+        fx, fy = 6+i%5, 4.4-(i//5)*0.65
+        dessiner_indiv(ax, fx, fy, st.session_state.femelles[i], souligne=(st.session_state.id_mere == i))
+        if st.session_state.id_mere == i:
+            ax.annotate("", xy=(7.5, 1.2), xytext=(fx, fy-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6, connectionstyle="arc3,rad=0.1"))
 
-    # 3. Le bloc de l'enfant
+    if st.session_state.id_pere is not None:
+        dessiner_label(ax, 0.8, 1.2, "Père", align='right')
+        dessiner_indiv(ax, 2.5, 1.2, st.session_state.males[st.session_state.id_pere], souligne=True, halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
+    if st.session_state.id_mere is not None:
+        dessiner_label(ax, 9.2, 1.2, "Mère", align='left')
+        dessiner_indiv(ax, 7.5, 1.2, st.session_state.femelles[st.session_state.id_mere], souligne=True, halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
+
     if st.session_state.enfant:
-        fig_enf, ax_enf = plt.subplots(figsize=(10, 1.2), dpi=90)
-        ax_enf.set_xlim(-0.5, 11.5); ax_enf.set_ylim(-0.5, 0.5); ax_enf.axis('off')
-        dessiner_indiv(ax_enf, 5, 0, st.session_state.enfant)
-        st.pyplot(fig_enf)
+        dessiner_label(ax, 3.8, -1.0, "Enfant", align='right')
+        dessiner_indiv(ax, 5, -1.0, st.session_state.enfant)
+        ax.annotate("", xy=(4.9, -0.7), xytext=(2.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
+        ax.annotate("", xy=(5.1, -0.7), xytext=(7.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
 
-# --- STATISTIQUES (PANDAS) ---
+    plt.tight_layout(pad=0)
+    st.pyplot(fig)
+
+# --- SECTION STATISTIQUES (Bas de page) ---
 st.markdown("---")
+st.header("📊 Bilan statistique sur 40 tirages")
 if st.button("🚀 Lancer 40 tirages rapides"):
-    res = ["".join(sorted(random.choice(list(random.choice(st.session_state.males))) + random.choice(list(random.choice(st.session_state.femelles))))) for _ in range(40)]
-    df = pd.DataFrame({'Génotype': ['AA', 'Aa', 'aa', 'Total'], 'Nombre': [res.count('AA'), res.count('Aa'), res.count('aa'), 40]})
+    resultats = []
+    for _ in range(40):
+        p, m = random.choice(st.session_state.males), random.choice(st.session_state.femelles)
+        bebe = "".join(sorted(random.choice(list(p)) + random.choice(list(m))))
+        resultats.append(bebe)
+    
+    c = {g: resultats.count(g) for g in ['AA', 'Aa', 'aa']}
+    df = pd.DataFrame({
+        'Génotype': ['AA', 'Aa', 'aa', 'Total'],
+        'Nombre': [c['AA'], c['Aa'], c['aa'], 40],
+        'Fréquence (%)': [c['AA']/0.4, c['Aa']/0.4, c['aa']/0.4, 100.0]
+    })
     st.table(df)
