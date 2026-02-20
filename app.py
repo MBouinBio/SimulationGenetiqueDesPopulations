@@ -109,4 +109,9 @@ with col_graph:
     # 3. Enfant (Bas - très proche des parents)
     if st.session_state.enfant:
         dessiner_label(ax, 3.8, -1.0, "Enfant", align='right')
-        dessiner_indiv(ax, 5, -1.
+        dessiner_indiv(ax, 5, -1.0, st.session_state.enfant)
+        ax.annotate("", xy=(4.9, -0.7), xytext=(2.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
+        ax.annotate("", xy=(5.1, -0.7), xytext=(7.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
+
+    plt.tight_layout(pad=0)
+    st.pyplot(fig)
