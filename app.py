@@ -105,4 +105,40 @@ with c3:
     # Désactivé si parents non choisis
     desactive = (st.session_state.id_pere is None or st.session_state.id_mere is None)
     if st.button("🎲 Enfant", disabled=desactive):
-        idx_p, idx_m = random.randint(0, 1), random.
+        idx_p, idx_m = random.randint(0, 1), random.randint(0, 1)
+        p_ge = st.session_state.males[st.session_state.id_pere]
+        m_ge = st.session_state.femelles[st.session_state.id_mere]
+        st.session_state.alleles_choisis = (idx_p, idx_m)
+        st.session_state.enfant = "".join(sorted(p_ge[idx_p] + m_ge[idx_m]))
+        st.rerun()
+with c4:
+    if st.button("🔄 Reset"):
+        st.session_state.id_pere = None
+        st.session_state.id_mere = None
+        st.session_state.enfant = None
+        st.session_state.alleles_choisis = None
+        st.rerun()
+
+# 3. GRAPHIQUE RÉSULTAT (Fusionné Parents + Enfant)
+if st.session_state.id_pere is not None or st.session_state.id_mere is not None:
+    fig2, ax2 = plt.subplots(figsize=(10, 3.2))
+    ax2.set_xlim(-1, 11); ax2.set_ylim(-1.5, 3); ax2.axis('off')
+
+    if st.session_state.id_pere is not None:
+        style_label(ax2, 2.5, 2.6, "père tiré au hasard")
+        dessiner_indiv(ax2, 2.5, 1.4, st.session_state.males[st.session_state.id_pere], 
+                       souligne=True, halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
+        
+    if st.session_state.id_mere is not None:
+        style_label(ax2, 7.5, 2.6, "mère tirée au hasard")
+        dessiner_indiv(ax2, 7.5, 1.4, st.session_state.femelles[st.session_state.id_mere], 
+                       souligne=True, halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
+
+    if st.session_state.enfant:
+        style_label(ax2, 5, 0.2, "enfant")
+        dessiner_indiv(ax2, 5, -0.6, st.session_state.enfant)
+    
+    plt.tight_layout()
+    st.pyplot(fig2)
+else:
+    st.info("Utilisez les boutons ci-dessus pour simuler un croisement.")
