@@ -2,38 +2,31 @@ import streamlit as st
 import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import pandas as pd
+import io
 
-# --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Simulateur Génétique SVT", layout="wide")
+# --- CONFIGURATION ---
+st.set_page_config(page_title="Simulateur SVT", layout="centered")
 
-# --- CSS POUR COMPACTAGE MAXIMAL ---
+# --- STYLE CSS ---
 st.markdown("""
     <style>
-    .block-container { padding-top: 0.5rem; padding-bottom: 0rem; }
-    h1 { font-size: 1.2rem !important; margin-bottom: 0.2rem; text-align: left; }
-    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    /* Style des boutons verticaux */
-    .stButton>button { width: 100%; height: 3rem; margin-bottom: 0.5rem; font-weight: bold; }
+    .block-container { padding-top: 1rem; }
+    .stButton>button { width: 100%; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- COULEURS ---
-C_AA = '#FFFFFF'
-C_aa = '#DBDBDB'
-C_Aa = '#FFFFFF'
+C_AA, C_aa, C_Aa = '#FFFFFF', '#DBDBDB', '#FFFFFF'
 COULEURS_INDIV = {'AA': C_AA, 'aa': C_aa, 'Aa': C_Aa}
-COULEUR_A = '#F5F0F0'
-COULEUR_a = '#BEA19D'
+COULEUR_A, COULEUR_a = '#F5F0F0', '#BEA19D'
 
 # --- INITIALISATION ---
 if 'males' not in st.session_state:
     base = ['Aa']*10 + ['aa']*5 + ['AA']*5
     st.session_state.males = list(base); random.shuffle(st.session_state.males)
     st.session_state.femelles = list(base); random.shuffle(st.session_state.femelles)
-    st.session_state.id_pere = None
-    st.session_state.id_mere = None
-    st.session_state.enfant = None
-    st.session_state.alleles_choisis = None
+    st.session_state.id_pere = st.session_state.id_mere = st.session_state.enfant = st.session_state.alleles_choisis = None
 
 # --- FONCTIONS DE DESSIN ---
 def dessiner_label(ax, x, y, texte, align='center'):
@@ -53,65 +46,66 @@ def dessiner_indiv(ax, x, y, ge, souligne=False, halo_allele=None):
         ax.add_patch(patches.Ellipse((x+dx, y), 0.16, 0.25, fc=c, ec=ec_a, lw=lw_a, zorder=6))
         ax.text(x+dx, y, a, ha='center', va='center', fontsize=6, fontweight='bold', zorder=7)
 
-# --- MISE EN PAGE : GRAPHIQUE À GAUCHE, BOUTONS À DROITE ---
-st.title("🧬 Transmission des allèles")
-col_graph, col_btns = st.columns([4, 1])
-
-with col_btns:
-    st.write("### Actions")
-    if st.button("👨 Père"):
-        st.session_state.id_pere = random.randint(0, 19)
-        st.session_state.enfant = None
-        st.rerun()
-    if st.button("👩 Mère"):
-        st.session_state.id_mere = random.randint(0, 19)
-        st.session_state.enfant = None
-        st.rerun()
-    desactive = (st.session_state.id_pere is None or st.session_state.id_mere is None)
-    if st.button("🎲 Enfant", disabled=desactive):
+# --- PARTIE 1 : SIMULATEUR VISUEL ---
+st.header("🧬 1. Simulation visuelle")
+col1, col2, col3, col4 = st.columns(4)
+with col1: 
+    if st.button("👨 Père"): st.session_state.id_pere = random.randint(0, 19); st.session_state.enfant = None; st.rerun()
+with col2: 
+    if st.button("👩 Mère"): st.session_state.id_mere = random.randint(0, 19); st.session_state.enfant = None; st.rerun()
+with col3: 
+    if st.button("🎲 Enfant", disabled=(st.session_state.id_pere is None or st.session_state.id_mere is None)):
         st.session_state.alleles_choisis = (random.randint(0, 1), random.randint(0, 1))
         p = st.session_state.males[st.session_state.id_pere][st.session_state.alleles_choisis[0]]
         m = st.session_state.femelles[st.session_state.id_mere][st.session_state.alleles_choisis[1]]
         st.session_state.enfant = "".join(sorted(p + m))
         st.rerun()
-    if st.button("🔄 Reset"):
-        st.session_state.id_pere = st.session_state.id_mere = st.session_state.enfant = st.session_state.alleles_choisis = None
-        st.rerun()
+with col4:
+    if st.button("🔄 Reset"): st.session_state.id_pere = st.session_state.id_mere = st.session_state.enfant = None; st.rerun()
 
-with col_graph:
-    # --- GRAPHIQUE COMPACTÉ ---
-    fig, ax = plt.subplots(figsize=(9, 7))
-    # Réduction des limites Y pour tasser le tout
-    ax.set_xlim(-1, 11); ax.set_ylim(-2.5, 5.5); ax.axis('off')
+fig, ax = plt.subplots(figsize=(9, 6), dpi=75)
+ax.set_xlim(-1, 11); ax.set_ylim(-1.5, 5.5); ax.axis('off')
+dessiner_label(ax, 5, 5.2, "Population")
 
-    # 1. Population (Haut)
-    dessiner_label(ax, 5, 5.2, "Population")
-    for i in range(20):
-        # Hommes
-        mx, my = i%5, 4.4-(i//5)*0.65
-        dessiner_indiv(ax, mx, my, st.session_state.males[i], souligne=(st.session_state.id_pere == i))
-        if st.session_state.id_pere == i:
-            ax.annotate("", xy=(2.5, 1.2), xytext=(mx, my-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6, connectionstyle="arc3,rad=-0.1"))
-        # Femmes
-        fx, fy = 6+i%5, 4.4-(i//5)*0.65
-        dessiner_indiv(ax, fx, fy, st.session_state.femelles[i], souligne=(st.session_state.id_mere == i))
-        if st.session_state.id_mere == i:
-            ax.annotate("", xy=(7.5, 1.2), xytext=(fx, fy-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6, connectionstyle="arc3,rad=0.1"))
+for i in range(20):
+    mx, my = i%5, 4.4-(i//5)*0.65
+    dessiner_indiv(ax, mx, my, st.session_state.males[i], souligne=(st.session_state.id_pere == i))
+    if st.session_state.id_pere == i:
+        ax.annotate("", xy=(2.5, 1.2), xytext=(mx, my-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6))
+    fx, fy = 6+i%5, 4.4-(i//5)*0.65
+    dessiner_indiv(ax, fx, fy, st.session_state.femelles[i], souligne=(st.session_state.id_mere == i))
+    if st.session_state.id_mere == i:
+        ax.annotate("", xy=(7.5, 1.2), xytext=(fx, fy-0.2), arrowprops=dict(arrowstyle="->", color="gold", lw=1.5, alpha=0.6))
 
-    # 2. Parents (Milieu - plus proche de la population)
-    if st.session_state.id_pere is not None:
-        dessiner_label(ax, 0.8, 1.2, "Père", align='right')
-        dessiner_indiv(ax, 2.5, 1.2, st.session_state.males[st.session_state.id_pere], souligne=True, halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
-    if st.session_state.id_mere is not None:
-        dessiner_label(ax, 9.2, 1.2, "Mère", align='left')
-        dessiner_indiv(ax, 7.5, 1.2, st.session_state.femelles[st.session_state.id_mere], souligne=True, halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
+if st.session_state.id_pere is not None:
+    dessiner_label(ax, 0.8, 1.2, "Père", align='right')
+    dessiner_indiv(ax, 2.5, 1.2, st.session_state.males[st.session_state.id_pere], souligne=True, halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
+if st.session_state.id_mere is not None:
+    dessiner_label(ax, 9.2, 1.2, "Mère", align='left')
+    dessiner_indiv(ax, 7.5, 1.2, st.session_state.femelles[st.session_state.id_mere], souligne=True, halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
+if st.session_state.enfant:
+    dessiner_label(ax, 3.8, -0.8, "Enfant", align='right')
+    dessiner_indiv(ax, 5, -0.8, st.session_state.enfant)
+    ax.annotate("", xy=(4.9, -0.5), xytext=(2.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
+    ax.annotate("", xy=(5.1, -0.5), xytext=(7.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
 
-    # 3. Enfant (Bas - très proche des parents)
-    if st.session_state.enfant:
-        dessiner_label(ax, 3.8, -1.0, "Enfant", align='right')
-        dessiner_indiv(ax, 5, -1.0, st.session_state.enfant)
-        ax.annotate("", xy=(4.9, -0.7), xytext=(2.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
-        ax.annotate("", xy=(5.1, -0.7), xytext=(7.5, 0.9), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
+st.pyplot(fig)
 
-    plt.tight_layout(pad=0)
-    st.pyplot(fig)
+# --- PARTIE 2 : STATISTIQUES ---
+st.markdown("---")
+st.header("📊 2. Bilan de 40 tirages")
+
+if st.button("🚀 Lancer 40 tirages rapides"):
+    resultats = []
+    for _ in range(40):
+        p, m = random.choice(st.session_state.males), random.choice(st.session_state.femelles)
+        enfant = "".join(sorted(random.choice(list(p)) + random.choice(list(m))))
+        resultats.append(enfant)
+    
+    counts = {g: resultats.count(g) for g in ['AA', 'Aa', 'aa']}
+    df = pd.DataFrame({
+        'Génotype': ['AA', 'Aa', 'aa', 'Total'],
+        'Nombre': [counts['AA'], counts['Aa'], counts['aa'], 40],
+        'Fréquence (%)': [counts['AA']/0.4, counts['Aa']/0.4, counts['aa']/0.4, 100]
+    })
+    st.table(df)
