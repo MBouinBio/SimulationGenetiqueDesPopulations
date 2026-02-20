@@ -35,35 +35,21 @@ def style_label(ax, x, y, texte, couleur='black'):
             color=couleur, bbox=dict(facecolor='white', edgecolor='#CCCCCC', boxstyle='round,pad=0.3', alpha=0.9))
 
 def dessiner_indiv(ax, x, y, ge, souligne=False, halo_allele=None):
-    # --- PARAMÈTRES ---
-    r_tete = 0.22
-    h_tronc = 0.8
-    w_tronc = 0.6
+    r = 0.35
     ec = 'gold' if souligne else 'black'
     lw = 4 if souligne else 1
-    
-    # 1. LA TÊTE (Cercle)
-    ax.add_patch(patches.Circle((x, y + 0.5), r_tete, fc=COULEURS_INDIV[ge], ec=ec, lw=lw, zorder=2))
-    
-    # 2. LE TRONC (Rectangle arrondi / Ellipse verticale)
-    # On utilise une ellipse allongée verticalement pour un aspect "épais"
-    ax.add_patch(patches.Ellipse((x, y - 0.1), w_tronc, h_tronc, fc=COULEURS_INDIV[ge], ec=ec, lw=lw, zorder=2))
-    
-    # 3. LES ALLÈLES (Placés dans le tronc)
+    # Corps
+    ax.add_patch(patches.Ellipse((x, y), r*2.2, r*1.5, fc=COULEURS_INDIV[ge], ec=ec, lw=lw, zorder=2))
+    # Allèles
     for i, a in enumerate(list(ge)):
-        # On les place l'un à côté de l'autre au centre du tronc
-        dx = -0.12 if i == 0 else 0.12
-        dy = -0.1
+        dx = -0.3 * r if i == 0 else 0.3 * r
         c = BEIGE if a == 'A' else MARRON
-        
-        # Surbrillance si l'allèle est choisi lors du tirage
+        # Surbrillance de l'allèle spécifique si tiré
         ec_a = 'gold' if (halo_allele is not None and i == halo_allele) else 'black'
         lw_a = 3 if (halo_allele is not None and i == halo_allele) else 0.5
-        
-        ax.add_patch(patches.Ellipse((x + dx, y + dy), 0.18, 0.25, fc=c, ec=ec_a, lw=lw_a, zorder=3))
-        
+        ax.add_patch(patches.Ellipse((x + dx, y), r*0.5, r*0.8, fc=c, ec=ec_a, lw=lw_a, zorder=3))
         txt_c = 'black' if a == 'A' else 'white'
-        ax.text(x+dx, y+dy, a, ha='center', va='center', fontsize=7, fontweight='bold', color=txt_c, zorder=4)
+        ax.text(x+dx, y, a, ha='center', va='center', fontsize=7, fontweight='bold', color=txt_c, zorder=4)
 
 # --- INTERFACE ---
 st.title("🧬 Étude de la transmission des allèles")
