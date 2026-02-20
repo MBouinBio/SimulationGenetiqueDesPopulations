@@ -18,11 +18,11 @@ st.markdown("""
 
 # --- COULEURS ---
 C_AA = '#FFFFFF' # Blanc
-C_aa = '#FF4D4D' # Rouge clair
-C_Aa = '#FFCCCC' # Rouge très clair
+C_aa = '#FFCCCC' # Blanc
+C_Aa = '#FFFFFF' # Rouge très clair
 COULEURS_INDIV = {'AA': C_AA, 'aa': C_aa, 'Aa': C_Aa}
-COULEUR_A = '#FFFFFF'
-COULEUR_a = '#FF4D4D'
+COULEUR_A = '#F5F0F0'
+COULEUR_a = '#46322F'
 
 # --- INITIALISATION ---
 if 'males' not in st.session_state:
