@@ -96,4 +96,38 @@ for i in range(20):
     mx, my = i%5, 4.8-(i//5)*0.8
     dessiner_indiv(ax, mx, my, st.session_state.males[i], souligne=(st.session_state.id_pere == i))
     if st.session_state.id_pere == i:
-        ax.annotate("", xy=(2.5, 0.5), xytext=(mx, my-0.3),
+        ax.annotate("", xy=(2.5, 0.5), xytext=(mx, my-0.3), 
+                    arrowprops=dict(arrowstyle="->", color="gold", lw=2, alpha=0.6, connectionstyle="arc3,rad=-0.1"))
+
+    # Femmes
+    fx, fy = 6+i%5, 4.8-(i//5)*0.8
+    dessiner_indiv(ax, fx, fy, st.session_state.femelles[i], souligne=(st.session_state.id_mere == i))
+    if st.session_state.id_mere == i:
+        ax.annotate("", xy=(7.5, 0.5), xytext=(fx, fy-0.3), 
+                    arrowprops=dict(arrowstyle="->", color="gold", lw=2, alpha=0.6, connectionstyle="arc3,rad=0.1"))
+
+# 2. PARENTS TIRÉS (MILIEU)
+if st.session_state.id_pere is not None:
+    # Étiquette placée à GAUCHE du père
+    dessiner_label(ax, 1.0, 0.5, "Père tiré", align='right')
+    dessiner_indiv(ax, 2.5, 0.5, st.session_state.males[st.session_state.id_pere], souligne=True, 
+                   halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
+
+if st.session_state.id_mere is not None:
+    # Étiquette placée à DROITE de la mère
+    dessiner_label(ax, 9.0, 0.5, "Mère tirée", align='left')
+    dessiner_indiv(ax, 7.5, 0.5, st.session_state.femelles[st.session_state.id_mere], souligne=True, 
+                   halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
+
+# 3. ENFANT ET TRANSMISSION (BAS)
+if st.session_state.enfant:
+    # Étiquette à gauche de l'enfant
+    dessiner_label(ax, 3.8, -2.5, "Enfant", align='right')
+    dessiner_indiv(ax, 5, -2.5, st.session_state.enfant)
+    
+    # Flèches d'allèles (Libres car l'étiquette est sur le côté)
+    ax.annotate("", xy=(4.9, -2.1), xytext=(2.5, 0.1), arrowprops=dict(arrowstyle="->", color="#FF4D4D", lw=1.5, ls="--"))
+    ax.annotate("", xy=(5.1, -2.1), xytext=(7.5, 0.1), arrowprops=dict(arrowstyle="->", color="#FF4D4D", lw=1.5, ls="--"))
+
+plt.tight_layout()
+st.pyplot(fig)
