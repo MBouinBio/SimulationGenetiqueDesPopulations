@@ -28,7 +28,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🧬 Étude de la transmission des allèles")
 
 # --- CONSTANTES ---
 BEIGE = '#F5F5DC'
