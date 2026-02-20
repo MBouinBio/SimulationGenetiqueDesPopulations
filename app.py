@@ -22,7 +22,7 @@ C_aa = '#FFCCCC' # Blanc
 C_Aa = '#FFFFFF' # Rouge très clair
 COULEURS_INDIV = {'AA': C_AA, 'aa': C_aa, 'Aa': C_Aa}
 COULEUR_A = '#F5F0F0'
-COULEUR_a = '#46322F'
+COULEUR_a = '#BEA19D'
 
 # --- INITIALISATION ---
 if 'males' not in st.session_state:
