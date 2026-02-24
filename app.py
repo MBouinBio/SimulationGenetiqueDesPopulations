@@ -113,7 +113,7 @@ with col_graph:
 
     # 3. Dessin de l'Enfant
     if st.session_state.enfant:
-        dessiner_label(ax, 3.8, -0.4, "Descendant", align='right')
+        dessiner_label(ax, 3.8, -0.4, "Enfant conçu", align='right')
         dessiner_indiv(ax, 5, -0.4, st.session_state.enfant)
         ax.annotate("", xy=(4.9, -0.2), xytext=(2.5, 0.85), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
         ax.annotate("", xy=(5.1, -0.2), xytext=(7.5, 0.85), arrowprops=dict(arrowstyle="->", color="#BEA19D", lw=1.2, ls="--"))
