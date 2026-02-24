@@ -121,21 +121,3 @@ with col_graph:
     plt.tight_layout(pad=0)
     st.pyplot(fig)
 
-# --- SECTION STATISTIQUES ---
-st.markdown("---")
-st.subheader("📊 Analyse statistique de la reproduction")
-if st.button("🚀 Simuler 40 tirages aléatoires dans cette population"):
-    res = []
-    for _ in range(40):
-        p_random = random.choice(st.session_state.males)
-        m_random = random.choice(st.session_state.femelles)
-        bebe = "".join(sorted(random.choice(list(p_random)) + random.choice(list(m_random))))
-        res.append(bebe)
-        
-    c = {g: res.count(g) for g in ['AA', 'Aa', 'aa']}
-    df = pd.DataFrame({
-        'Génotype': ['AA', 'Aa', 'aa', 'TOTAL'],
-        'Nombre d\'individus': [c['AA'], c['Aa'], c['aa'], 40],
-        'Fréquence (%)': [c['AA']/0.4, c['Aa']/0.4, c['aa']/0.4, 100.0]
-    })
-    st.table(df)
