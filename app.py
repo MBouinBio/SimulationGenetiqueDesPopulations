@@ -59,11 +59,11 @@ with col_btns:
     dis_p = st.session_state.id_pere is not None
     dis_m = st.session_state.id_mere is not None
     
-    if st.button("👨 Sélectionner Père", disabled=dis_p):
+    if st.button("👨 Tirage au sort d'un père", disabled=dis_p):
         st.session_state.id_pere = random.randint(0, 19)
         st.rerun()
         
-    if st.button("👩 Sélectionner Mère", disabled=dis_m):
+    if st.button("👩 Tirage au sort d'une mère", disabled=dis_m):
         st.session_state.id_mere = random.randint(0, 19)
         st.rerun()
     
@@ -103,11 +103,11 @@ with col_graph:
 
     # 2. Dessin des Parents sélectionnés
     if st.session_state.id_pere is not None:
-        dessiner_label(ax, 0.8, 1.1, "Père choisi", align='right')
+        dessiner_label(ax, 0.8, 1.1, "Père tiré au sort", align='right')
         dessiner_indiv(ax, 2.5, 1.1, st.session_state.males[st.session_state.id_pere], souligne=True, 
                        halo_allele=st.session_state.alleles_choisis[0] if st.session_state.enfant else None)
     if st.session_state.id_mere is not None:
-        dessiner_label(ax, 9.2, 1.1, "Mère choisie", align='left')
+        dessiner_label(ax, 9.2, 1.1, "Mère tirée au sort", align='left')
         dessiner_indiv(ax, 7.5, 1.1, st.session_state.femelles[st.session_state.id_mere], souligne=True, 
                        halo_allele=st.session_state.alleles_choisis[1] if st.session_state.enfant else None)
 
